@@ -40,7 +40,7 @@ define(["./operations"], function (ops) {
         if ( ops.val(opA) === ops.val(opB) ) {
             k(ops.retain(1), ops.retain(1), indexA+1, indexB+1);
         } else {
-            k(ops.retain(1), opA, indexA+1, indexB);
+            k(opA, ops.retain(1), indexA+1, indexB);
         }
     });
 
@@ -104,13 +104,13 @@ define(["./operations"], function (ops) {
         }
 
         for ( ; indexA < lenA; indexA++ ) {
-            operationsBPrime.push(operationsA[indexA]);
-            operationsAPrime.push(ops.retain(1));
+            operationsAPrime.push(operationsA[indexA]);
+            operationsBPrime.push(ops.retain(1));
         }
 
         for ( ; indexB < lenB; indexB++ ) {
-            operationsAPrime.push(operationsB[indexB]);
-            operationsBPrime.push(ops.retain(1));
+            operationsBPrime.push(operationsB[indexB]);
+            operationsAPrime.push(ops.retain(1));
         }
 
         return k(operationsAPrime, operationsBPrime);
