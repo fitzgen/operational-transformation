@@ -1,0 +1,59 @@
+<html>
+  <body>
+    <script src="require.js"></script>
+    <script>
+    require({ baseUrl: "" },
+            ["operations", "xform", "apply"],
+            function (ops, xform, apply) {
+                window.ops = ops;
+                window.xform = xform;
+                window.apply = apply;
+
+                var numTests = 0;
+                var failed = 0;
+
+                // TODO: aprime and bprime seem to be switched (at least part of
+                // the time).
+                function test (original, a, b, expected) {
+                    var operationsA = ops.getOperations(original, a);
+                    var operationsB = ops.getOperations(original, b);
+                    xform(operationsA, operationsB, function (ap, bp) {
+                        numTests++;
+                        try {
+                            console.log(original + " -< (" + a + ", " + b +") >- "
+                                        + expected);
+
+                            var docA = apply(operationsA, original);
+                            var finalA = apply(ap, docA);
+                            console.log("  " + original + " -> " + docA + " -> "
+                                        + finalA);
+                            if ( finalA !== expected ) {
+                                throw new Error(finalA + " !== " + expected);
+                            }
+
+                            var docB = apply(operationsB, original);
+                            var finalB = apply(bp, docB);
+                            console.log("  " + original + " -> " + docB + " -> "
+                                        + finalB);
+                            if ( finalB !== expected ) {
+                                throw new Error(finalB + " !== " + expected);
+                            }
+                        } catch (e) {
+                            failed++;
+                            console.log("  Error: " + e.message);
+                        }
+                    });
+                }
+
+                test("at", "t", "fat", "ft");
+                test("nick", "Nick", "nick is cool", "Nick is cool");
+                test("sudo", "sumo", "suo", "sumo");
+                test("hello", "Hello", "Hello", "Hello");
+                test("care", "are", "are", "are");
+
+                console.log(numTests - failed + " / " + numTests + " tests passed.");
+
+            });
+    </script>
+  </body>
+</html>
