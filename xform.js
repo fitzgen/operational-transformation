@@ -22,7 +22,7 @@ define(["./operations"], function (ops) {
 
     // For now, assume that the length of a retain is *always* 1.
     defXformer("retain", "retain", function (opA, opB, indexA, indexB, k) {
-        k(opB, opA, indexA+1, indexB+1);
+        k(opA, opB, indexA+1, indexB+1);
     });
 
     // For now, assume that deletes are always a single char at a time.
@@ -40,32 +40,32 @@ define(["./operations"], function (ops) {
         if ( ops.val(opA) === ops.val(opB) ) {
             k(ops.retain(1), ops.retain(1), indexA+1, indexB+1);
         } else {
-            k(opA, null, indexA+1, indexB);
+            k(ops.retain(1), opA, indexA+1, indexB);
         }
     });
 
     defXformer("retain", "delete", function (opA, opB, indexA, indexB, k) {
-        k(opB, null, indexA+1, indexB+1);
+        k(null, opB, indexA+1, indexB+1);
     });
 
     defXformer("delete", "retain", function (opA, opB, indexA, indexB, k) {
-        k(null, opA, indexA+1, indexB+1);
+        k(opA, null, indexA+1, indexB+1);
     });
 
     defXformer("insert", "retain", function (opA, opB, indexA, indexB, k) {
-        k(opB, opA, indexA+1, indexB);
+        k(opA, opB, indexA+1, indexB);
     });
 
     defXformer("retain", "insert", function (opA, opB, indexA, indexB, k) {
-        k(opB, opA, indexA, indexB+1);
+        k(opA, opB, indexA, indexB+1);
     });
 
     defXformer("insert", "delete", function (opA, opB, indexA, indexB, k) {
-        k(ops.retain(1), opA, indexA+1, indexB);
+        k(opA, ops.retain(1), indexA+1, indexB);
     });
 
     defXformer("delete", "insert", function (opA, opB, indexA, indexB, k) {
-        k(opB, ops.retain(1), indexA, indexB+1);
+        k(ops.retain(1), opB, indexA, indexB+1);
     });
 
     return function (operationsA, operationsB, k) {

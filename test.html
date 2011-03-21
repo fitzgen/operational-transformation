@@ -2,7 +2,8 @@
   <body>
     <script src="require.js"></script>
     <script>
-    require({ baseUrl: "" },
+    require({ baseUrl: "",
+              urlArgs: "bust=" + new Date() },
             ["operations", "xform", "apply"],
             function (ops, xform, apply) {
                 window.ops = ops;
@@ -12,8 +13,6 @@
                 var numTests = 0;
                 var failed = 0;
 
-                // TODO: aprime and bprime seem to be switched (at least part of
-                // the time).
                 function test (original, a, b, expected) {
                     var operationsA = ops.getOperations(original, a);
                     var operationsB = ops.getOperations(original, b);
@@ -24,7 +23,7 @@
                                         + expected);
 
                             var docA = apply(operationsA, original);
-                            var finalA = apply(ap, docA);
+                            var finalA = apply(bp, docA);
                             console.log("  " + original + " -> " + docA + " -> "
                                         + finalA);
                             if ( finalA !== expected ) {
@@ -32,7 +31,7 @@
                             }
 
                             var docB = apply(operationsB, original);
-                            var finalB = apply(bp, docB);
+                            var finalB = apply(ap, docB);
                             console.log("  " + original + " -> " + docB + " -> "
                                         + finalB);
                             if ( finalB !== expected ) {
@@ -40,7 +39,7 @@
                             }
                         } catch (e) {
                             failed++;
-                            console.log("  Error: " + e.message);
+                            console.log("  ERROR: " + e.message);
                         }
                     });
                 }
@@ -50,6 +49,7 @@
                 test("sudo", "sumo", "suo", "sumo");
                 test("hello", "Hello", "Hello", "Hello");
                 test("care", "are", "are", "are");
+                test("air", "fair", "lair", "flair");
 
                 console.log(numTests - failed + " / " + numTests + " tests passed.");
 
