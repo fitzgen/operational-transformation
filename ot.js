@@ -1,14 +1,9 @@
 var EventEmitter = require("events").EventEmitter;
 
-function error (msg) {
-    throw new Error(msg);
-}
-
 function nop () {}
 
 exports.OT = function (opts) {
     var store = opts.store || require("./stores/memory-store"),
-        communicator = opts.communicator || error("communicator is required."),
         manager = new EventEmitter();
 
     manager.newDocument = function (callback) {
