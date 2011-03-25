@@ -1,26 +1,18 @@
-define(["./apply", "./xform", "./operations"], function (apply, xform, operations) {
-
-    function defineGetSet (prop) {
-        return function (obj, val) {
-            return arguments.length == 2
-                ? obj[prop] = val
-                : obj[prop];
-        };
-    }
-
-    var messageDocument = defineGetSet("doc");
-    var messageRevision = defineGetSet("rev");
-    var messageOperations = defineGetSet("ops");
-    var messageId = defineGetSet("id");
+define([
+    "./apply",
+    "./xform",
+    "./operations",
+    "./messages"
+], function (apply, xform, operations, messages) {
 
     function xformEach (outgoing, ops) {
         var i, len, msg;
         for ( i = 0, len = outgoing.length; i < len; i++ ) {
             msg = outgoing[i];
-            xform(messageOperations(msg), ops, function (aPrime, bPrime) {
-                messageOperations(msg, aPrime);
-                messageDocument(msg, apply(messageDocument(msg), aPrime));
-                messageRevision(msg, messageRevision(msg)+1);
+            xform(messages.operations(msg), ops, function (aPrime, bPrime) {
+                messages.operations(msg, aPrime);
+                messages.document(msg, apply(messages.document(msg), aPrime));
+                messages.revision(msg, messages.revision(msg)+1);
                 ops = bPrime;
             });
         }
@@ -40,9 +32,9 @@ define(["./apply", "./xform", "./operations"], function (apply, xform, operation
     }
 
     function init (outgoing, socket, ui, initialData) {
-        var previousDoc = messageDocument(initialData),
-            previousRevision = messageRevision(initialData),
-            id = messageId(initialData);
+        var previousDoc = messages.document(initialData),
+            previousRevision = messages.revision(initialData),
+            id = messages.id(initialData);
 
         ui.update(previousDoc);
 
@@ -50,10 +42,10 @@ define(["./apply", "./xform", "./operations"], function (apply, xform, operation
             var msg, uiDoc = ui.getDocument();
             if ( uiDoc !== previousDoc ) {
                 msg = {};
-                messageOperations(msg, operations.getOperations(previousDoc, uiDoc));
-                messageDocument(msg, uiDoc);
-                messageRevision(msg, ++previousRevision);
-                messageId(msg, id);
+                messages.operations(msg, operations.getOperations(previousDoc, uiDoc));
+                messages.document(msg, uiDoc);
+                messages.revision(msg, ++previousRevision);
+                messages.id(msg, id);
 
                 outgoing.push(msg);
                 previousDoc = uiDoc;
@@ -102,8 +94,8 @@ define(["./apply", "./xform", "./operations"], function (apply, xform, operation
                         outgoing.shift();
                     } else {
                         // TODO: need to handle cursor selection and index
-                        xformEach(outgoing, messageOperations(msg));
-                        ui.update(messageDocument(outgoing[outgoing.length-1]));
+                        xformEach(outgoing, messages.operations(msg));
+                        ui.update(messages.document(outgoing[outgoing.length-1]));
                     }
 
                     if ( outgoing.length > 0 ) {
