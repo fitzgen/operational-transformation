@@ -2,8 +2,12 @@ define(['events'], function (events) {
 
     function nop () {}
 
+    function error (msg) {
+        throw new Error(msg);
+    }
+
     return function (opts) {
-        var store = opts.store || require("./stores/memory-store"),
+        var store = opts.store || error('store is required'),
             manager = new events.EventEmitter();
 
         manager.newDocument = function (callback) {
