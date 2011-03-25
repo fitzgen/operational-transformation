@@ -1,3 +1,6 @@
+// This module provides all of the custom errors defined by this library.
+
+
 define(["util"], function (util) {
 
     var exports = {};

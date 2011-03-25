@@ -1,3 +1,12 @@
+// This module is the server's equivalent of `./client.js`; that is, it provides
+// the high level Operational Transformation API for the server side of
+// things. You just need to pass it a store parameter which allows it to get,
+// save, and create documents in whatever backend you choose. It is an event
+// emitter, and it is assumed that you will listen to these events that it emits
+// and have some type of communication layer with the clients to let them know
+// of new updates and which operations have been applied to the master document.
+
+
 define(['events'], function (events) {
 
     function nop () {}

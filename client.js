@@ -1,3 +1,15 @@
+// This modules defines the behavior of the client's OT. It handles the
+// buffering of operations yet to be committed to the master document and the
+// responsibility of transforming those operations if the server sends new
+// operations before they have all been committed.
+//
+// While this code is meant to run on the client, it does not contain any DOM
+// manipulation, or browser specific code. All of that is abstracted and
+// sandboxed within the `ui` option for the `OTDocument` constructor. One could
+// fairly easily use some front end other than the browser with little to no
+// changes so long as they provide the functions required in the ui parameter.
+
+
 define([
     "./apply",
     "./xform",

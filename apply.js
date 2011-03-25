@@ -1,3 +1,7 @@
+// This module defines a function which applies a set of operations which span a
+// document, to that document. The resulting document is returned.
+
+
 define(["./operations"], function (operations) {
     return function (ops, doc) {
         var i,

@@ -1,3 +1,8 @@
+// This module defines the implementation of our operations. How they are
+// represented, their construction, and how to calculate the set of operations
+// to change some document A in to document B.
+
+
 define(function () {
 
     // Simple operation constructors.

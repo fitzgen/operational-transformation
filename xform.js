@@ -1,3 +1,6 @@
+// This module defines the `xform` function which is at the heart of OT.
+
+
 define(["./operations"], function (ops) {
 
     // Pattern match on two operations by looking up their transforming function
@@ -16,16 +19,19 @@ define(["./operations"], function (ops) {
         return a + "," + b;
     }
 
+    // Define a transformation function for when we are comparing two operations
+    // of typeA and typeB.
     function defXformer (typeA, typeB, xformer) {
         xformTable[join(typeA, typeB)] = xformer;
     }
 
-    // For now, assume that the length of a retain is *always* 1.
+    // Assumptions currently made by all of the xformer functions: that all of
+    // the individual operations only deal with one character at a time.
+
     defXformer("retain", "retain", function (opA, opB, indexA, indexB, k) {
         k(opA, opB, indexA+1, indexB+1);
     });
 
-    // For now, assume that deletes are always a single char at a time.
     defXformer("delete", "delete", function (opA, opB, indexA, indexB, k) {
         if ( ops.val(opA) === ops.val(opB) ) {
             k(null, null, indexA+1, indexB+1);
@@ -35,7 +41,6 @@ define(["./operations"], function (ops) {
         }
     });
 
-    // For now, assume inserts are always a single character at a time.
     defXformer("insert", "insert", function (opA, opB, indexA, indexB, k) {
         if ( ops.val(opA) === ops.val(opB) ) {
             k(ops.retain(1), ops.retain(1), indexA+1, indexB+1);
@@ -79,7 +84,7 @@ define(["./operations"], function (ops) {
             opB,
             xformer;
 
-        // Continuation for the xformer
+        // Continuation for the xformer.
         function kk (aPrime, bPrime, newIndexA, newIndexB) {
             indexA = newIndexA;
             indexB = newIndexB;
@@ -102,6 +107,9 @@ define(["./operations"], function (ops) {
                                     + join(ops.type(opA), ops.type(opB)));
             }
         }
+
+        // If either set of operations was longer than the other, we can just
+        // pass them on to the prime version.
 
         for ( ; indexA < lenA; indexA++ ) {
             operationsAPrime.push(operationsA[indexA]);
