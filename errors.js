@@ -1,13 +1,19 @@
-var util = require("util");
+define(["util"], function (util) {
 
-function defineError (name) {
-    Parent = Parent || Error;
-    exports[name] = function (msg) {
-        Parent.call(this, msg);
-    };
-    util.inherits(exports[name], Parent);
-    exports[name].prototype.name = name;
-}
+    var exports = {};
 
-defineError("BadRevision");
-defineError("NoSuchDocument");
+    function defineError (name, Parent) {
+        Parent = Parent || Error;
+        exports[name] = function (msg) {
+            Parent.call(this, msg);
+        };
+        util.inherits(exports[name], Parent);
+        exports[name].prototype.name = name;
+    }
+
+    defineError("BadRevision");
+    defineError("NoSuchDocument");
+
+    return exports;
+
+});
