@@ -44,7 +44,7 @@ define([
         socket.send({
             type: "connect",
             data: {
-                id: id
+                id: docId
             }
         });
     }
