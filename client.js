@@ -74,15 +74,38 @@ define([
         setTimeout(loop, 10);
     }
 
+    // Might need to start sending client id's back and forth. Don't really want
+    // to have to do a deep equality test on every check here.
+    function isOurOutgoing (msg, outgoing) {
+        var top = outgoing[0],
+            topOps = messages.operations(top),
+            msgOps = messages.operations(msg),
+            i = 0,
+            len = msgOps.length;
+        if ( messages.id(msg) !== messages.id(top) ) {
+            return false;
+        }
+        if ( messages.rev(msg) !== messages.rev(top) ) {
+            return false;
+        }
+        if ( len !== topOps.length ) {
+            return false;
+        }
+        if ( topOps.join() !== msgOps.join() ) {
+            return false;
+        }
+        return true;
+    }
+
     return {
         OTDocument: function (opts) {
             var outgoing = [],
                 socket = opts.socket || error("socket is required"),
-                ui = opts.socket || error("ui is required");
-                id = opts.id,
+                ui = opts.socket || error("ui is required"),
+                docId = opts.id,
                 initialized = false;
 
-            connect(socket, id);
+            connect(socket, docId);
 
             // TODO: what happens if we receive an update message from the
             // server and we update the client and they lose what they were just
