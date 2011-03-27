@@ -14,13 +14,15 @@ define(function () {
 
     function defineGetSet (prop) {
         return function (obj, val) {
-            return arguments.length == 2
+            return arguments.length === 2
                 ? obj[prop] = val
                 : obj[prop];
         };
     }
 
     return {
+        // The 'document' attribute is only defined for server responses to a
+        // client connect.
         document: defineGetSet("doc"),
         revision: defineGetSet("rev"),
         operations: defineGetSet("ops"),
