@@ -7,7 +7,13 @@
 // of new updates and which operations have been applied to the master document.
 
 
-define(['events'], function (events) {
+/*jslint onevar: true, undef: true, eqeqeq: true, bitwise: true,
+  newcap: true, immed: true, nomen: false, white: false, plusplus: false,
+  laxbreak: true */
+
+/*global define */
+
+define(['events', './messages', './apply'], function (events, messages, apply) {
 
     function nop () {}
 

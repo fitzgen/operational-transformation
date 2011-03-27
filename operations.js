@@ -3,6 +3,12 @@
 // to change some document A in to document B.
 
 
+/*jslint onevar: true, undef: true, eqeqeq: true, bitwise: true,
+  newcap: true, immed: true, nomen: false, white: false, plusplus: false,
+  laxbreak: true */
+
+/*global define */
+
 define(function () {
 
     // Simple operation constructors.

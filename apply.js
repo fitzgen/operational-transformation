@@ -2,6 +2,12 @@
 // document, to that document. The resulting document is returned.
 
 
+/*jslint onevar: true, undef: true, eqeqeq: true, bitwise: true,
+  newcap: true, immed: true, nomen: false, white: false, plusplus: false,
+  laxbreak: true */
+
+/*global define */
+
 define(["./operations"], function (operations) {
     return function (ops, doc) {
         var i,

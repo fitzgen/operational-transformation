@@ -1,6 +1,12 @@
 // This module defines the `xform` function which is at the heart of OT.
 
 
+/*jslint onevar: true, undef: true, eqeqeq: true, bitwise: true,
+  newcap: true, immed: true, nomen: false, white: false, plusplus: false,
+  laxbreak: true */
+
+/*global define */
+
 define(["./operations"], function (ops) {
 
     // Pattern match on two operations by looking up their transforming function

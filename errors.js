@@ -1,6 +1,12 @@
 // This module provides all of the custom errors defined by this library.
 
 
+/*jslint onevar: true, undef: true, eqeqeq: true, bitwise: true,
+  newcap: true, immed: true, nomen: false, white: false, plusplus: false,
+  laxbreak: true */
+
+/*global define, setTimeout */
+
 define(["util"], function (util) {
 
     var exports = {};
