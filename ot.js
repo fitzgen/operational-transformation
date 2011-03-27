@@ -39,16 +39,16 @@ define(['events', './messages', './apply'], function (events, messages, apply) {
         };
 
         manager.applyOperations = function (message) {
-            var id = message.id,
-                parentRev = message.rev,
-                ops = message.ops,
+            var id = messages.id(message),
+                parentRev = messages.revision(message),
+                ops = messages.operations(message),
                 emit = this.emit.bind(this);
 
             store.getDocument(id, function (err, doc) {
                 if ( err ) {
                     emit("error", err);
                 } else {
-                    if ( rev === doc.rev ) {
+                    if ( parentRev === doc.rev ) {
                         try {
                             doc.doc = apply(ops, doc.doc);
                         } catch (err) {
@@ -58,6 +58,7 @@ define(['events', './messages', './apply'], function (events, messages, apply) {
 
                         doc.rev++;
                         store.saveDocument(doc, function (err, doc) {
+                            var msg;
                             if ( err ) {
                                 // Bad revisions aren't considered an error at this
                                 // level, just ignored.
@@ -65,7 +66,11 @@ define(['events', './messages', './apply'], function (events, messages, apply) {
                                     emit("error", err);
                                 }
                             } else {
-                                emit("update", doc);
+                                msg = {};
+                                messages.revision(msg, doc.rev);
+                                messages.id(msg, doc.id);
+                                messages.operations(msg, ops);
+                                emit("update", msg);
                             }
                         });
                     }
