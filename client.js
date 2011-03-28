@@ -54,10 +54,12 @@ define([
             previousRevision = messages.revision(initialData),
             id = messages.id(initialData);
 
-        ui.update(previousDoc);
+        ui.update(previousDoc); // TODO: cursor position
 
         function loop () {
-            var msg, uiDoc = ui.getDocument();
+            var msg,
+                oldOutgoingLength = outgoing.length,
+                uiDoc = ui.getDocument();
             if ( uiDoc !== previousDoc ) {
                 msg = {};
                 messages.operations(msg, operations.getOperations(previousDoc, uiDoc));
@@ -67,8 +69,15 @@ define([
 
                 outgoing.push(msg);
                 previousDoc = uiDoc;
+
+                if ( oldOutgoingLength === 0 ) {
+                    socket.send({
+                        type: "update",
+                        data: outgoing[0]
+                    });
+                }
             }
-            setTimeout(loop, 50);
+            setTimeout(loop, 1000);
         }
 
         setTimeout(loop, 10);
@@ -85,7 +94,7 @@ define([
         if ( messages.id(msg) !== messages.id(top) ) {
             return false;
         }
-        if ( messages.rev(msg) !== messages.rev(top) ) {
+        if ( messages.revision(msg) !== messages.revision(top) ) {
             return false;
         }
         if ( len !== topOps.length ) {
@@ -101,7 +110,7 @@ define([
         OTDocument: function (opts) {
             var outgoing = [],
                 socket = opts.socket || error("socket is required"),
-                ui = opts.socket || error("ui is required"),
+                ui = opts.ui || error("ui is required"),
                 docId = opts.id,
                 initialized = false;
 
@@ -116,12 +125,12 @@ define([
             // change that the client is creating, then one message from the
             // inbox.
 
-            socket.receive(function (event) {
+            socket.onMessage(function (event) {
                 var msg;
 
                 switch ( event.type ) {
 
-                case "init":
+                case "connect":
                     if ( ! initialized ) {
                         init(outgoing, socket, ui, event.data);
                     } else {
@@ -131,19 +140,18 @@ define([
 
                 case "update":
                     msg = event.data;
-                    if ( isOurOutgoing(msg, outgoing) ) {
+                    if ( outgoing.length && isOurOutgoing(msg, outgoing) ) {
                         outgoing.shift();
                     } else {
                         // TODO: need to handle cursor selection and index
                         xformEach(outgoing, messages.operations(msg));
-                        ui.update(messages.document(outgoing[outgoing.length-1]));
-                    }
 
-                    if ( outgoing.length > 0 ) {
-                        socket.send({
-                            type: "update",
-                            data: outgoing[0]
-                        });
+                        // TODO: cursor position
+                        if ( outgoing.length ) {
+                            ui.update(messages.document(outgoing[outgoing.length-1]));
+                        } else {
+                            ui.update(messages.document(msg));
+                        }
                     }
                     break;
 
