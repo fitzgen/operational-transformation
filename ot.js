@@ -13,7 +13,12 @@
 
 /*global define */
 
-define(['events', './messages', './apply'], function (events, messages, apply) {
+define([
+    'events',
+    './messages',
+    './apply',
+    './errors'
+], function (events, messages, apply, errors) {
 
     function nop () {}
 
@@ -40,7 +45,7 @@ define(['events', './messages', './apply'], function (events, messages, apply) {
 
         manager.applyOperations = function (message) {
             var id = messages.id(message),
-                parentRev = messages.revision(message),
+                newRev = messages.revision(message),
                 ops = messages.operations(message),
                 emit = this.emit.bind(this);
 
@@ -48,11 +53,11 @@ define(['events', './messages', './apply'], function (events, messages, apply) {
                 if ( err ) {
                     emit("error", err);
                 } else {
-                    if ( parentRev === doc.rev ) {
+                    if ( newRev === doc.rev+1 ) {
                         try {
                             doc.doc = apply(ops, doc.doc);
-                        } catch (err) {
-                            emit("error", err);
+                        } catch (e) {
+                            emit("error", e);
                             return;
                         }
 
@@ -70,6 +75,7 @@ define(['events', './messages', './apply'], function (events, messages, apply) {
                                 messages.revision(msg, doc.rev);
                                 messages.id(msg, doc.id);
                                 messages.operations(msg, ops);
+                                messages.document(msg, doc.doc);
                                 emit("update", msg);
                             }
                         });
