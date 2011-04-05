@@ -27,8 +27,8 @@ define([
         var i, len, msg;
         for ( i = 0, len = outgoing.length; i < len; i++ ) {
             msg = outgoing[i];
-            xform(messages.operations(msg), ops, function (aPrime, bPrime) {
-                messages.operations(msg, aPrime);
+            xform(messages.operation(msg), ops, function (aPrime, bPrime) {
+                messages.operation(msg, aPrime);
                 messages.document(msg, apply(messages.document(msg), aPrime));
                 messages.revision(msg, messages.revision(msg)+1);
                 ops = bPrime;
@@ -62,7 +62,7 @@ define([
                 uiDoc = ui.getDocument();
             if ( uiDoc !== previousDoc ) {
                 msg = {};
-                messages.operations(msg, operations.getOperations(previousDoc, uiDoc));
+                messages.operation(msg, operations.operation(previousDoc, uiDoc));
                 messages.document(msg, uiDoc);
                 messages.revision(msg, ++previousRevision);
                 messages.id(msg, id);
@@ -87,8 +87,8 @@ define([
     // to have to do a deep equality test on every check here.
     function isOurOutgoing (msg, outgoing) {
         var top = outgoing[0],
-            topOps = messages.operations(top),
-            msgOps = messages.operations(msg),
+            topOps = messages.operation(top),
+            msgOps = messages.operation(msg),
             i = 0,
             len = msgOps.length;
         if ( messages.id(msg) !== messages.id(top) ) {
@@ -144,7 +144,7 @@ define([
                         outgoing.shift();
                     } else {
                         // TODO: need to handle cursor selection and index
-                        xformEach(outgoing, messages.operations(msg));
+                        xformEach(outgoing, messages.operation(msg));
 
                         // TODO: cursor position
                         if ( outgoing.length ) {

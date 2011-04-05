@@ -25,7 +25,7 @@ define(function () {
         // client connect.
         document: defineGetSet("doc"),
         revision: defineGetSet("rev"),
-        operations: defineGetSet("ops"),
+        operation: defineGetSet("op"),
         id: defineGetSet("id")
     };
 

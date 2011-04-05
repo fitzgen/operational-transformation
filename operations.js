@@ -1,6 +1,6 @@
-// This module defines the implementation of our operations. How they are
-// represented, their construction, and how to calculate the set of operations
-// to change some document A in to document B.
+// Operations are a stream of individual changes which span the whole document
+// from start to finish. Changes have a type which is one of retain, insert, or
+// delete, and have associated data based on their type.
 
 
 /*jslint onevar: true, undef: true, eqeqeq: true, bitwise: true,
@@ -11,7 +11,7 @@
 
 define(function () {
 
-    // Simple operation constructors.
+    // Simple change constructors.
 
     function insert (chars) {
         return ["insert", chars];
@@ -25,12 +25,12 @@ define(function () {
         return ["retain", n];
     }
 
-    function type (operation) {
-        return operation[0];
+    function type (change) {
+        return change[0];
     }
 
-    function val (operation) {
-        return operation[1];
+    function val (change) {
+        return change[1];
     }
 
     // We don't want to copy arrays all the time, aren't mutating lists, and
@@ -69,20 +69,20 @@ define(function () {
     // Abstract out the table in case I want to change the implementation to
     // arrays of arrays or something.
 
-    function put (table, x, y, ops) {
-        return (table[String(x) + "," + String(y)] = ops);
+    function put (table, x, y, changes) {
+        return (table[String(x) + "," + String(y)] = changes);
     }
 
     function get (table, x, y) {
-        var ops = table[String(x) + "," + String(y)];
-        if ( ops ) {
-            return ops;
+        var changes = table[String(x) + "," + String(y)];
+        if ( changes ) {
+            return changes;
         } else {
             throw new TypeError("No operations at " + String(x) + "," + String(y));
         }
     }
 
-    function makeOperationsTable (s, t) {
+    function makeChangesTable (s, t) {
         var table = {},
             n = s.length,
             m = t.length,
@@ -101,50 +101,52 @@ define(function () {
     }
 
     function chooseCell (table, x, y, k) {
-        var prevOps = get(table, x, y-1),
-            min = prevOps.length,
+        var prevChanges = get(table, x, y-1),
+            min = prevChanges.length,
             direction = "up";
 
         if ( get(table, x-1, y).length < min ) {
-            prevOps = get(table, x-1, y);
-            min = prevOps.length;
+            prevChanges = get(table, x-1, y);
+            min = prevChanges.length;
             direction = "left";
         }
 
         if ( get(table, x-1, y-1).length < min ) {
-            prevOps = get(table, x-1, y-1);
-            min = prevOps.length;
+            prevChanges = get(table, x-1, y-1);
+            min = prevChanges.length;
             direction = "diagonal";
         }
 
-        return k(direction, prevOps);
+        return k(direction, prevChanges);
     }
 
     return {
 
-        getOperations: function (s, t) {
+        // Constructor for operations (which are a stream of changes). Uses
+        // variation of Levenshtein Distance.
+        operation: function (s, t) {
             var n = s.length,
                 m = t.length,
                 i,
                 j,
-                ops = makeOperationsTable(s, t);
+                changes = makeChangesTable(s, t);
             for ( i = 1; i <= m; i += 1 ) {
                 for ( j = 1; j <= n; j += 1 ) {
-                    chooseCell(ops, i, j, function (direction, prevOps) {
+                    chooseCell(changes, i, j, function (direction, prevChanges) {
                         switch ( direction ) {
                         case "left":
-                            put(ops, i, j, cons(insert(t.charAt(i-1)), prevOps));
+                            put(changes, i, j, cons(insert(t.charAt(i-1)), prevChanges));
                             break;
                         case "up":
-                            put(ops, i, j, cons(del(s.charAt(j-1)), prevOps));
+                            put(changes, i, j, cons(del(s.charAt(j-1)), prevChanges));
                             break;
                         case "diagonal":
                             if ( s.charAt(j-1) === t.charAt(i-1) ) {
-                                put(ops, i, j, cons(retain(1), prevOps));
+                                put(changes, i, j, cons(retain(1), prevChanges));
                             } else {
-                                put(ops, i, j, cons(insert(t.charAt(i-1)),
-                                                    cons(del(s.charAt(j-1)),
-                                                         prevOps)));
+                                put(changes, i, j, cons(insert(t.charAt(i-1)),
+                                                        cons(del(s.charAt(j-1)),
+                                                             prevChanges)));
                             }
                             break;
                         default:
@@ -153,7 +155,7 @@ define(function () {
                     });
                 }
             }
-            return get(ops, i-1, j-1).toArray().reverse();
+            return get(changes, i-1, j-1).toArray().reverse();
         },
 
         insert: insert,
@@ -162,16 +164,16 @@ define(function () {
         type: type,
         val: val,
 
-        isDelete: function (op) {
-            return typeof op === "object" && type(op) === "delete";
+        isDelete: function (change) {
+            return typeof change === "object" && type(change) === "delete";
         },
 
-        isRetain: function (op) {
-            return typeof op === "object" && type(op) === "retain";
+        isRetain: function (change) {
+            return typeof change === "object" && type(change) === "retain";
         },
 
-        isInsert: function (op) {
-            return typeof op === "object" && type(op) === "insert";
+        isInsert: function (change) {
+            return typeof change === "object" && type(change) === "insert";
         }
 
     };

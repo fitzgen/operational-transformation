@@ -43,10 +43,10 @@ define([
             }.bind(this));
         };
 
-        manager.applyOperations = function (message) {
+        manager.applyOperation = function (message) {
             var id = messages.id(message),
                 newRev = messages.revision(message),
-                ops = messages.operations(message),
+                op = messages.operation(message),
                 emit = this.emit.bind(this);
 
             store.getDocument(id, function (err, doc) {
@@ -55,7 +55,7 @@ define([
                 } else {
                     if ( newRev === doc.rev+1 ) {
                         try {
-                            doc.doc = apply(ops, doc.doc);
+                            doc.doc = apply(op, doc.doc);
                         } catch (e) {
                             emit("error", e);
                             return;
@@ -74,7 +74,7 @@ define([
                                 msg = {};
                                 messages.revision(msg, doc.rev);
                                 messages.id(msg, doc.id);
-                                messages.operations(msg, ops);
+                                messages.operation(msg, op);
                                 messages.document(msg, doc.doc);
                                 emit("update", msg);
                             }
