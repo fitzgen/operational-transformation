@@ -37,6 +37,9 @@ define(function () {
     // only need O(1) prepend and length, we can get away with a custom singly
     // linked list implementation.
 
+    // TODO: keep track of number of non-retain changes and use this instead of
+    // length when choosing which path to take.
+
     var theEmptyList = {
         length: 0,
         toArray: function () {
