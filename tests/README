@@ -1,0 +1,1 @@
+To run the tests, do `node amd-shim.js tests.js`.
