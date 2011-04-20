@@ -130,6 +130,7 @@ define(function () {
                 i,
                 j,
                 changes = makeChangesTable(s, t);
+
             for ( i = 1; i <= m; i += 1 ) {
                 for ( j = 1; j <= n; j += 1 ) {
                     chooseCell(changes, i, j, function (direction, prevChanges) {
@@ -155,7 +156,8 @@ define(function () {
                     });
                 }
             }
-            return get(changes, i-1, j-1).toArray().reverse();
+
+            return get(changes, m, n).toArray().reverse();
         },
 
         insert: insert,
