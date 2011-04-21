@@ -29,7 +29,7 @@ define([
             msg = outgoing[i];
             xform(messages.operation(msg), ops, function (aPrime, bPrime) {
                 messages.operation(msg, aPrime);
-                messages.document(msg, apply(messages.document(msg), aPrime));
+                messages.document(msg, aPrime, apply(aPrime, messages.document(msg)));
                 messages.revision(msg, messages.revision(msg)+1);
                 ops = bPrime;
             });
@@ -47,40 +47,6 @@ define([
                 id: docId
             }
         });
-    }
-
-    function init (outgoing, socket, ui, initialData) {
-        var previousDoc = messages.document(initialData),
-            previousRevision = messages.revision(initialData),
-            id = messages.id(initialData);
-
-        ui.update(previousDoc); // TODO: cursor position
-
-        function loop () {
-            var msg,
-                oldOutgoingLength = outgoing.length,
-                uiDoc = ui.getDocument();
-            if ( uiDoc !== previousDoc ) {
-                msg = {};
-                messages.operation(msg, operations.operation(previousDoc, uiDoc));
-                messages.document(msg, uiDoc);
-                messages.revision(msg, ++previousRevision);
-                messages.id(msg, id);
-
-                outgoing.push(msg);
-                previousDoc = uiDoc;
-
-                if ( oldOutgoingLength === 0 ) {
-                    socket.send({
-                        type: "update",
-                        data: outgoing[0]
-                    });
-                }
-            }
-            setTimeout(loop, 1000);
-        }
-
-        setTimeout(loop, 10);
     }
 
     // Might need to start sending client id's back and forth. Don't really want
@@ -106,9 +72,63 @@ define([
         return true;
     }
 
+    function init (outgoing, incoming, socket, ui, initialData) {
+        var previousDoc = messages.document(initialData),
+            previousRevision = messages.revision(initialData),
+            id = messages.id(initialData);
+
+        ui.update(previousDoc); // TODO: cursor position
+
+        function loop () {
+            var msg,
+                oldOutgoingLength = outgoing.length,
+                uiDoc = ui.getDocument();
+
+            if ( uiDoc !== previousDoc ) {
+                msg = {};
+                messages.operation(msg, operations.operation(previousDoc, uiDoc));
+                messages.document(msg, uiDoc);
+                messages.revision(msg, ++previousRevision);
+                messages.id(msg, id);
+
+                outgoing.push(msg);
+                previousDoc = uiDoc;
+            }
+
+            while ( (msg = incoming.shift()) ) {
+                if ( outgoing.length && isOurOutgoing(msg, outgoing) ) {
+                    outgoing.shift();
+                } else {
+                    // TODO: need to handle cursor selection and index
+                    xformEach(outgoing, messages.operation(msg));
+                    previousRevision++;
+
+                    // TODO: cursor position
+                    if ( outgoing.length ) {
+                        ui.update(previousDoc = messages.document(outgoing[outgoing.length-1]));
+                    } else {
+                        ui.update(previousDoc = messages.document(msg));
+                    }
+                }
+            }
+
+            if ( outgoing.length ) {
+                socket.send({
+                    type: "update",
+                    data: outgoing[0]
+                });
+            }
+
+            setTimeout(loop, 1000);
+        }
+
+        setTimeout(loop, 10);
+    }
+
     return {
         OTDocument: function (opts) {
             var outgoing = [],
+                incoming = [],
                 socket = opts.socket || error("socket is required"),
                 ui = opts.ui || error("ui is required"),
                 docId = opts.id,
@@ -116,43 +136,19 @@ define([
 
             connect(socket, docId);
 
-            // TODO: what happens if we receive an update message from the
-            // server and we update the client and they lose what they were just
-            // typeing because we havent saved the operations in the outgoing
-            // buffer yet? Do I need to merge the main loop and handling of
-            // socket messages? Maybe just have the socket's receive handler
-            // queue events in an inbox and have the main loop process one
-            // change that the client is creating, then one message from the
-            // inbox.
-
             socket.onMessage(function (event) {
-                var msg;
-
                 switch ( event.type ) {
 
                 case "connect":
                     if ( ! initialized ) {
-                        init(outgoing, socket, ui, event.data);
+                        init(outgoing, incoming, socket, ui, event.data);
                     } else {
                         error("Already initialized");
                     }
                     break;
 
                 case "update":
-                    msg = event.data;
-                    if ( outgoing.length && isOurOutgoing(msg, outgoing) ) {
-                        outgoing.shift();
-                    } else {
-                        // TODO: need to handle cursor selection and index
-                        xformEach(outgoing, messages.operation(msg));
-
-                        // TODO: cursor position
-                        if ( outgoing.length ) {
-                            ui.update(messages.document(outgoing[outgoing.length-1]));
-                        } else {
-                            ui.update(messages.document(msg));
-                        }
-                    }
+                    incoming.push(event.data);
                     break;
 
                 default:

@@ -27,11 +27,11 @@ define(["./operations"], function (operations) {
                 if ( doc.indexOf(operations.val(op[i])) !== 0 ) {
                     throw new TypeError("Expected '" + operations.val(op[i])
                                         + "' to delete, found '" + doc.slice(0, 10)
-                                        + "...'");
+                                        + "'");
                 } else {
                     doc = doc.slice(operations.val(op[i]).length);
-                    break;
                 }
+                break;
             default:
                 throw new TypeError("Unknown operation: "
                                     + operations.type(op[i]));
