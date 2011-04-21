@@ -45,14 +45,10 @@ define(["../errors"], function (errors) {
         },
 
         getDocument: function (id, callback) {
-            console.log("inside getDocument");
             setTimeout(function () {
-                console.log("inside getDocument's callback");
                 if ( id in documents ) {
-                    console.log("inside getDocument's callback, success");
                     callback(null, deepCopy(documents[id]));
                 } else {
-                    console.log("inside getDocument's callback, error");
                     callback(new errors.NoSuchDocument("No document with id = " + id),
                              null);
                 }
@@ -62,7 +58,6 @@ define(["../errors"], function (errors) {
         saveDocument: function (doc, callback) {
             setTimeout(function () {
                 if ( doc.id in documents ) {
-                    console.log(doc.rev, documents[doc.id].rev);
                     if ( doc.rev === documents[doc.id].rev + 1 ) {
                         documents[doc.id] = deepCopy(doc);
                         callback(null, deepCopy(documents[doc.id]));
