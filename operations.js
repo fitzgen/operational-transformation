@@ -14,23 +14,34 @@ define(function () {
     // Simple change constructors.
 
     function insert (chars) {
-        return ["insert", chars];
+        return "i" + chars;
     }
 
     function del (chars) {
-        return ["delete", chars];
+        return "d" + chars;
     }
 
     function retain (n) {
-        return ["retain", n];
+        return "r" + String(n);
     }
 
     function type (change) {
-        return change[0];
+        switch ( change.charAt(0) ) {
+        case "r":
+            return "retain";
+        case "d":
+            return "delete";
+        case "i":
+            return "insert";
+        default:
+            throw new TypeError("Unknown type of change: ", change);
+        }
     }
 
     function val (change) {
-        return change[1];
+        return type(change) === "r"
+            ? Number(change.slice(1))
+            : change.slice(1);
     }
 
     // We don't want to copy arrays all the time, aren't mutating lists, and
