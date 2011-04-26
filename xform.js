@@ -9,15 +9,15 @@
 
 define(["./operations"], function (ops) {
 
-    // Pattern match on two changes by looking up their transforming function in
+    // Pattern match on two edits by looking up their transforming function in
     // the `xformTable`. Each function in the table should take arguments like
     // the following:
     //
-    //     xformer(changeA, changeB, indexA, indexB, continuation)
+    //     xformer(editA, editB, indexA, indexB, continuation)
     //
     // and should return the results by calling the continuation
     //
-    //     return continuation(changeAPrime || null, changeBPrime || null, newIndexA, newIndexB);
+    //     return continuation(editAPrime || null, editBPrime || null, newIndexA, newIndexB);
 
     var xformTable = {};
 
@@ -25,58 +25,58 @@ define(["./operations"], function (ops) {
         return a + "," + b;
     }
 
-    // Define a transformation function for when we are comparing two changes of
+    // Define a transformation function for when we are comparing two edits of
     // typeA and typeB.
     function defXformer (typeA, typeB, xformer) {
         xformTable[join(typeA, typeB)] = xformer;
     }
 
     // Assumptions currently made by all of the xformer functions: that all of
-    // the individual changes only deal with one character at a time.
+    // the individual edits only deal with one character at a time.
 
-    defXformer("retain", "retain", function (changeA, changeB, indexA, indexB, k) {
-        k(changeA, changeB, indexA+1, indexB+1);
+    defXformer("retain", "retain", function (editA, editB, indexA, indexB, k) {
+        k(editA, editB, indexA+1, indexB+1);
     });
 
-    defXformer("delete", "delete", function (changeA, changeB, indexA, indexB, k) {
-        if ( ops.val(changeA) === ops.val(changeB) ) {
+    defXformer("delete", "delete", function (editA, editB, indexA, indexB, k) {
+        if ( ops.val(editA) === ops.val(editB) ) {
             k(null, null, indexA+1, indexB+1);
         } else {
             throw new TypeError("Document state mismatch: delete("
-                                + ops.val(changeA) + ") !== delete(" + ops.val(changeB) + ")");
+                                + ops.val(editA) + ") !== delete(" + ops.val(editB) + ")");
         }
     });
 
-    defXformer("insert", "insert", function (changeA, changeB, indexA, indexB, k) {
-        if ( ops.val(changeA) === ops.val(changeB) ) {
+    defXformer("insert", "insert", function (editA, editB, indexA, indexB, k) {
+        if ( ops.val(editA) === ops.val(editB) ) {
             k(ops.retain(1), ops.retain(1), indexA+1, indexB+1);
         } else {
-            k(changeA, ops.retain(1), indexA+1, indexB);
+            k(editA, ops.retain(1), indexA+1, indexB);
         }
     });
 
-    defXformer("retain", "delete", function (changeA, changeB, indexA, indexB, k) {
-        k(null, changeB, indexA+1, indexB+1);
+    defXformer("retain", "delete", function (editA, editB, indexA, indexB, k) {
+        k(null, editB, indexA+1, indexB+1);
     });
 
-    defXformer("delete", "retain", function (changeA, changeB, indexA, indexB, k) {
-        k(changeA, null, indexA+1, indexB+1);
+    defXformer("delete", "retain", function (editA, editB, indexA, indexB, k) {
+        k(editA, null, indexA+1, indexB+1);
     });
 
-    defXformer("insert", "retain", function (changeA, changeB, indexA, indexB, k) {
-        k(changeA, changeB, indexA+1, indexB);
+    defXformer("insert", "retain", function (editA, editB, indexA, indexB, k) {
+        k(editA, editB, indexA+1, indexB);
     });
 
-    defXformer("retain", "insert", function (changeA, changeB, indexA, indexB, k) {
-        k(changeA, changeB, indexA, indexB+1);
+    defXformer("retain", "insert", function (editA, editB, indexA, indexB, k) {
+        k(editA, editB, indexA, indexB+1);
     });
 
-    defXformer("insert", "delete", function (changeA, changeB, indexA, indexB, k) {
-        k(changeA, ops.retain(1), indexA+1, indexB);
+    defXformer("insert", "delete", function (editA, editB, indexA, indexB, k) {
+        k(editA, ops.retain(1), indexA+1, indexB);
     });
 
-    defXformer("delete", "insert", function (changeA, changeB, indexA, indexB, k) {
-        k(ops.retain(1), changeB, indexA, indexB+1);
+    defXformer("delete", "insert", function (editA, editB, indexA, indexB, k) {
+        k(ops.retain(1), editB, indexA, indexB+1);
     });
 
     return function (operationA, operationB, k) {
@@ -86,8 +86,8 @@ define(["./operations"], function (ops) {
             lenB = operationB.length,
             indexA = 0,
             indexB = 0,
-            changeA,
-            changeB,
+            editA,
+            editB,
             xformer;
 
         // Continuation for the xformer.
@@ -103,18 +103,18 @@ define(["./operations"], function (ops) {
         }
 
         while ( indexA < lenA && indexB < lenB ) {
-            changeA = operationA[indexA];
-            changeB = operationB[indexB];
-            xformer = xformTable[join(ops.type(changeA), ops.type(changeB))];
+            editA = operationA[indexA];
+            editB = operationB[indexB];
+            xformer = xformTable[join(ops.type(editA), ops.type(editB))];
             if ( xformer ) {
-                xformer(changeA, changeB, indexA, indexB, kk);
+                xformer(editA, editB, indexA, indexB, kk);
             } else {
                 throw new TypeError("Unknown combination to transform: "
-                                    + join(ops.type(changeA), ops.type(changeB)));
+                                    + join(ops.type(editA), ops.type(editB)));
             }
         }
 
-        // If either operation contains more changes than the other, we just
+        // If either operation contains more edits than the other, we just
         // pass them on to the prime version.
 
         for ( ; indexA < lenA; indexA++ ) {

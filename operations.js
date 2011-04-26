@@ -1,5 +1,5 @@
-// Operations are a stream of individual changes which span the whole document
-// from start to finish. Changes have a type which is one of retain, insert, or
+// Operations are a stream of individual edits which span the whole document
+// from start to finish. Edits have a type which is one of retain, insert, or
 // delete, and have associated data based on their type.
 
 
@@ -11,7 +11,7 @@
 
 define(function () {
 
-    // Simple change constructors.
+    // Simple edit constructors.
 
     function insert (chars) {
         return "i" + chars;
@@ -25,8 +25,8 @@ define(function () {
         return "r" + String(n);
     }
 
-    function type (change) {
-        switch ( change.charAt(0) ) {
+    function type (edit) {
+        switch ( edit.charAt(0) ) {
         case "r":
             return "retain";
         case "d":
@@ -34,21 +34,21 @@ define(function () {
         case "i":
             return "insert";
         default:
-            throw new TypeError("Unknown type of change: ", change);
+            throw new TypeError("Unknown type of edit: ", edit);
         }
     }
 
-    function val (change) {
-        return type(change) === "r"
-            ? Number(change.slice(1))
-            : change.slice(1);
+    function val (edit) {
+        return type(edit) === "r"
+            ? Number(edit.slice(1))
+            : edit.slice(1);
     }
 
     // We don't want to copy arrays all the time, aren't mutating lists, and
     // only need O(1) prepend and length, we can get away with a custom singly
     // linked list implementation.
 
-    // TODO: keep track of number of non-retain changes and use this instead of
+    // TODO: keep track of number of non-retain edits and use this instead of
     // length when choosing which path to take.
 
     var theEmptyList = {
@@ -77,23 +77,23 @@ define(function () {
         };
     }
 
-    // Abstract out the table in case I want to change the implementation to
+    // Abstract out the table in case I want to edit the implementation to
     // arrays of arrays or something.
 
-    function put (table, x, y, changes) {
-        return (table[String(x) + "," + String(y)] = changes);
+    function put (table, x, y, edits) {
+        return (table[String(x) + "," + String(y)] = edits);
     }
 
     function get (table, x, y) {
-        var changes = table[String(x) + "," + String(y)];
-        if ( changes ) {
-            return changes;
+        var edits = table[String(x) + "," + String(y)];
+        if ( edits ) {
+            return edits;
         } else {
-            throw new TypeError("No operations at " + String(x) + "," + String(y));
+            throw new TypeError("No operation at " + String(x) + "," + String(y));
         }
     }
 
-    function makeChangesTable (s, t) {
+    function makeEditsTable (s, t) {
         var table = {},
             n = s.length,
             m = t.length,
@@ -112,53 +112,53 @@ define(function () {
     }
 
     function chooseCell (table, x, y, k) {
-        var prevChanges = get(table, x, y-1),
-            min = prevChanges.length,
+        var prevEdits = get(table, x, y-1),
+            min = prevEdits.length,
             direction = "up";
 
         if ( get(table, x-1, y).length < min ) {
-            prevChanges = get(table, x-1, y);
-            min = prevChanges.length;
+            prevEdits = get(table, x-1, y);
+            min = prevEdits.length;
             direction = "left";
         }
 
         if ( get(table, x-1, y-1).length < min ) {
-            prevChanges = get(table, x-1, y-1);
-            min = prevChanges.length;
+            prevEdits = get(table, x-1, y-1);
+            min = prevEdits.length;
             direction = "diagonal";
         }
 
-        return k(direction, prevChanges);
+        return k(direction, prevEdits);
     }
 
     return {
 
-        // Constructor for operations (which are a stream of changes). Uses
+        // Constructor for operations (which are a stream of edits). Uses
         // variation of Levenshtein Distance.
         operation: function (s, t) {
             var n = s.length,
                 m = t.length,
                 i,
                 j,
-                changes = makeChangesTable(s, t);
+                edits = makeEditsTable(s, t);
 
             for ( i = 1; i <= m; i += 1 ) {
                 for ( j = 1; j <= n; j += 1 ) {
-                    chooseCell(changes, i, j, function (direction, prevChanges) {
+                    chooseCell(edits, i, j, function (direction, prevEdits) {
                         switch ( direction ) {
                         case "left":
-                            put(changes, i, j, cons(insert(t.charAt(i-1)), prevChanges));
+                            put(edits, i, j, cons(insert(t.charAt(i-1)), prevEdits));
                             break;
                         case "up":
-                            put(changes, i, j, cons(del(s.charAt(j-1)), prevChanges));
+                            put(edits, i, j, cons(del(s.charAt(j-1)), prevEdits));
                             break;
                         case "diagonal":
                             if ( s.charAt(j-1) === t.charAt(i-1) ) {
-                                put(changes, i, j, cons(retain(1), prevChanges));
+                                put(edits, i, j, cons(retain(1), prevEdits));
                             } else {
-                                put(changes, i, j, cons(insert(t.charAt(i-1)),
+                                put(edits, i, j, cons(insert(t.charAt(i-1)),
                                                         cons(del(s.charAt(j-1)),
-                                                             prevChanges)));
+                                                             prevEdits)));
                             }
                             break;
                         default:
@@ -168,7 +168,7 @@ define(function () {
                 }
             }
 
-            return get(changes, m, n).toArray().reverse();
+            return get(edits, m, n).toArray().reverse();
         },
 
         insert: insert,
@@ -177,16 +177,16 @@ define(function () {
         type: type,
         val: val,
 
-        isDelete: function (change) {
-            return typeof change === "object" && type(change) === "delete";
+        isDelete: function (edit) {
+            return typeof edit === "object" && type(edit) === "delete";
         },
 
-        isRetain: function (change) {
-            return typeof change === "object" && type(change) === "retain";
+        isRetain: function (edit) {
+            return typeof edit === "object" && type(edit) === "retain";
         },
 
-        isInsert: function (change) {
-            return typeof change === "object" && type(change) === "insert";
+        isInsert: function (edit) {
+            return typeof edit === "object" && type(edit) === "insert";
         }
 
     };
