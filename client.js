@@ -72,15 +72,38 @@ define([
         return true;
     }
 
+    function updateSelection (selection, operation) {
+        var i = 0,
+            len = operation.length,
+            newSelection = {
+                start: selection.start,
+                end: selection.end
+            },
+            size;
+        for ( i = 0; i < len; i++ ) {
+            if ( operations.isDelete(operation[i]) ) {
+                size = operations.val(operation[i]).length;
+                newSelection.start -= size;
+                newSelection.end -= size;
+            } else if ( operations.isInsert(operation[i]) ) {
+                size = operations.val(operation[i]).length;
+                newSelection.start += size;
+                newSelection.end += size;
+            }
+        }
+        return newSelection;
+    }
+
     function init (outgoing, incoming, socket, ui, initialData) {
         var previousDoc = messages.document(initialData),
             previousRevision = messages.revision(initialData),
             id = messages.id(initialData);
 
-        ui.update(previousDoc); // TODO: cursor position
+        ui.update(previousDoc);
 
         function loop () {
             var msg,
+                newSelection,
                 oldOutgoingLength = outgoing.length,
                 uiDoc = ui.getDocument();
 
@@ -99,15 +122,18 @@ define([
                 if ( outgoing.length && isOurOutgoing(msg, outgoing) ) {
                     outgoing.shift();
                 } else {
-                    // TODO: need to handle cursor selection and index
                     xformEach(outgoing, messages.operation(msg));
                     previousRevision++;
 
-                    // TODO: cursor position
+                    newSelection = updateSelection(ui.getSelection(),
+                                                   messages.operation(msg));
+
                     if ( outgoing.length ) {
-                        ui.update(previousDoc = messages.document(outgoing[outgoing.length-1]));
+                        previousDoc = messages.document(outgoing[outgoing.length-1]);
+                        ui.update(previousDoc, newSelection);
                     } else {
-                        ui.update(previousDoc = messages.document(msg));
+                        previousDoc = messages.document(msg);
+                        ui.update(previousDoc, newSelection);
                     }
                 }
             }
