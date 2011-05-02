@@ -151,12 +151,15 @@ define([
         setTimeout(loop, 10);
     }
 
+    function noop () {}
+
     return {
         OTDocument: function (opts) {
             var outgoing = [],
                 incoming = [],
                 socket = opts.socket || error("socket is required"),
                 ui = opts.ui || error("ui is required"),
+                pubsub = opts.pubsub || { publish: noop, subscribe: noop },
                 docId = opts.id,
                 initialized = false;
 
@@ -168,16 +171,21 @@ define([
                 case "connect":
                     if ( ! initialized ) {
                         init(outgoing, incoming, socket, ui, event.data);
+                        pubsub.publish("/ot/connect", [event.data]);
+                        initialized = true;
                     } else {
-                        error("Already initialized");
+                        pubsub.publish("/ot/error", ["Already initialized"]);
+                        throw new Error("Already initialized");
                     }
                     break;
 
                 case "update":
                     incoming.push(event.data);
+                    pubsub.publish("/ot/update", [event.data]);
                     break;
 
                 default:
+                    pubsub.publish("/ot/error", ["Unknown event type", event.type]);
                     throw new Error("Unknown event type: " + event.type);
 
                 }
